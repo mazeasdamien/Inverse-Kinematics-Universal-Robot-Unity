@@ -15,6 +15,8 @@ In Editor or Play mode move the IK gameobject.
 
 ![image](https://user-images.githubusercontent.com/58029218/231768581-8fc544e5-1a10-46d8-9c5c-56f96ce347c0.png)
 
+tags: inverse kinematics UR16e unity UR UR16 UR3 IK 3D
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
