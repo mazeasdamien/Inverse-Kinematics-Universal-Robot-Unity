@@ -1,5 +1,9 @@
 # Inverse Kinematics for UR16e Robot
 
+Cite this work:
+
+Mazeas, Damien (2023). Inverse Kinematics (IK) solution for a 6-DOF robot arm (UR16e) in Unity 3D. Cranfield Online Research Data (CORD). Software. https://doi.org/10.17862/cranfield.rd.22599850.v2
+
 Created with Unity 2021.3.14f1
 
 This repository contains a C# implementation of the Inverse Kinematics algorithm for the UR16e robot. The code calculates the joint angles required to achieve a desired end-effector pose using the robot's Denavit-Hartenberg (DH) parameters.
