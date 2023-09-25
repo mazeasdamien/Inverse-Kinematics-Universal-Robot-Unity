@@ -1,8 +1,6 @@
 # Inverse Kinematics for UR16e Robot
 
-Cite this work:
-
-Mazeas, Damien (2023). Inverse Kinematics (IK) solution for a 6-DOF robot arm (UR16e) in Unity 3D. Cranfield Online Research Data (CORD). Software. https://doi.org/10.17862/cranfield.rd.22599850.v2
+Please cite this repository if you are using it for your work, thank you ! :)
 
 Created with Unity 2021.3.14f1
 
