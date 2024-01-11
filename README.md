@@ -1,7 +1,4 @@
 Original video: https://youtu.be/9upypT6OWwk
-### Please cite this repository if you are using it for your work, thank you! :)
-
-
 
 # Inverse Kinematics for UR16e Robot
 
