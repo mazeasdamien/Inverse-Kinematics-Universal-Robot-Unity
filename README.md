@@ -1,5 +1,3 @@
-Original video: https://youtu.be/9upypT6OWwk
-
 # Inverse Kinematics for UR16e Robot
 
 Created with Unity 2021.3.14f1
