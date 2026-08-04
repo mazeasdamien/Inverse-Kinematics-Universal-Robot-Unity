@@ -6,7 +6,8 @@
   "creators": [
     {
       "name": "Mazeas, Damien",
-      "affiliation": "Beijing Normal-Hong Kong Baptist University"
+      "affiliation": "Beijing Normal-Hong Kong Baptist University",
+      "orcid": "0000-0001-9258-3909"
     }
   ],
   "description": "<p>Analytic (closed-form) inverse kinematics for the Universal Robots UR16e in Unity, following the standard UR solution (Hawkins 2013, <em>Analytic Inverse Kinematics for the Universal Robots UR-5/UR-10 Arms</em>). Moving an IK target drives the arm, which picks among the up-to-eight joint configurations that reach the same flange pose.</p><p>The solver is plain C# in double precision with no UnityEngine dependency, so it can be unit-tested outside the editor. It reports reachability per branch, handles the wrist singularity by pinning joint 6 to the caller's current angle, and can follow the branch closest to the current joints to avoid configuration jumps. A custom inspector lists the eight branches with their joint angles, and a runtime controller allows the target to be dragged with the mouse.</p><p>Version 2.0.0 corrects a defect in the earlier release: the previous solver omitted the sin(theta5) division when computing theta6, so the four wrist-flipped branches were off by pi and never reached the target pose. A forward-inverse-forward round trip over 2000 random reachable poses now returns eight correct branches with a worst-case pose error of about 5e-14 m.</p>",
