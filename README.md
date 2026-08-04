@@ -71,7 +71,8 @@ reachable poses:
 ## Citation
 
 Damien Mazeas. mazeasdamien/Inverse-Kinematics-Universal-Robot-Unity. Zenodo.
-https://doi.org/10.5281/zenodo.15265717
+https://zenodo.org/records/21796674
 
-That is the concept DOI: it always resolves to the most recent version. Cite the DOI of a
-specific version instead if you need to pin one — the version list is on the Zenodo record.
+That record is version 2, archived from the `v2.0.0` release. To cite every version at once
+rather than this one, use the concept DOI `10.5281/zenodo.15265717`, which always resolves to
+the most recent.
