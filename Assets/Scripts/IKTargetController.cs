@@ -216,44 +216,167 @@ public class IKTargetController : MonoBehaviour
         }
     }
 
+    // Everything on screen is laid out against this height and then scaled, so the
+    // panel and the handle keep the same apparent size on any display.
+    const float ReferenceHeight = 900f;
+
+    float UIScale => Mathf.Max(1f, Screen.height / ReferenceHeight);
+
     float HandlePixelRadius(Vector3 worldPosition)
     {
         Vector3 a = cam.WorldToScreenPoint(worldPosition);
         Vector3 b = cam.WorldToScreenPoint(worldPosition + cam.transform.up * handleRadius);
-        return Mathf.Max(18f, Vector2.Distance(a, b));
+        return Mathf.Max(26f * UIScale, Vector2.Distance(a, b));
     }
 
     void OnGUI()
     {
-        if (!showLegend)
+        Matrix4x4 previous = GUI.matrix;
+        GUI.matrix = Matrix4x4.Scale(Vector3.one * UIScale);
+
+        DrawTargetHandles();
+        if (showLegend)
+            DrawLegend();
+
+        GUI.matrix = previous;
+    }
+
+    // Gizmos only exist in the scene view, so the draggable handle has to be drawn
+    // here to be visible in play mode and in a build.
+    void DrawTargetHandles()
+    {
+        if (Event.current.type != EventType.Repaint)
             return;
 
-        var toolkit = Current;
-        var style = new GUIStyle(GUI.skin.label) { fontSize = 13, richText = true };
-        var box = new GUIStyle(GUI.skin.box) { alignment = TextAnchor.UpperLeft, padding = new RectOffset(12, 12, 10, 10) };
+        float scale = UIScale;
+        for (int i = 0; i < robots.Count; i++)
+        {
+            var toolkit = robots[i];
+            if (toolkit == null || toolkit.ik == null)
+                continue;
+            Vector3 screen = cam.WorldToScreenPoint(toolkit.ik.position);
+            if (screen.z <= 0f)
+                continue;
 
-        string status = "no robot in scene";
+            bool isSelected = i == selected;
+            bool reachable = toolkit.ValidCount > 0;
+            Color color = !reachable ? new Color(1f, 0.35f, 0.3f)
+                        : isSelected ? new Color(0.25f, 1f, 0.55f)
+                        : new Color(1f, 1f, 1f, 0.55f);
+
+            // GUI space has its origin top-left and is already scaled by GUI.matrix.
+            float radius = HandlePixelRadius(toolkit.ik.position) / scale;
+            Vector2 centre = new Vector2(screen.x, Screen.height - screen.y) / scale;
+
+            GUI.color = color;
+            GUI.DrawTexture(new Rect(centre.x - radius, centre.y - radius, radius * 2f, radius * 2f), Ring);
+            if (isSelected)
+            {
+                // crosshair, so the exact target point is unambiguous while dragging
+                float arm = radius * 1.6f;
+                var line = Texture2D.whiteTexture;
+                GUI.DrawTexture(new Rect(centre.x - arm, centre.y - 1f, arm - radius, 2f), line);
+                GUI.DrawTexture(new Rect(centre.x + radius, centre.y - 1f, arm - radius, 2f), line);
+                GUI.DrawTexture(new Rect(centre.x - 1f, centre.y - arm, 2f, arm - radius), line);
+                GUI.DrawTexture(new Rect(centre.x - 1f, centre.y + radius, 2f, arm - radius), line);
+            }
+            GUI.color = Color.white;
+        }
+    }
+
+    void DrawLegend()
+    {
+        var toolkit = Current;
+        // Zero margins and padding, so the measured height below is exactly what
+        // GUILayout stacks -- the defaults add ~8 px per block and clipped the
+        // last row out of the panel.
+        var style = new GUIStyle(GUI.skin.label)
+        {
+            fontSize = 15,
+            richText = true,
+            wordWrap = false,
+            margin = new RectOffset(0, 0, 0, 0),
+            padding = new RectOffset(0, 0, 0, 0),
+        };
+        var titleStyle = new GUIStyle(style) { fontSize = 17 };
+
+        string title = "no robot in scene";
+        string status = "";
         if (toolkit != null)
         {
-            string reach = $"{URKinematics.Reach(URKinematics.UR16e) * 1000f:F0} mm reach";
+            title = $"<b>{toolkit.name}</b>   {URKinematics.Reach(URKinematics.UR16e) * 1000f:F0} mm reach";
             status = toolkit.ValidCount == 0
-                ? $"<b>{toolkit.name}</b>  ({reach})\ntarget out of reach"
-                : $"<b>{toolkit.name}</b>  ({reach})\n{toolkit.ValidCount}/8 solutions - branch {toolkit.AppliedIndex} - {toolkit.selectionMode}";
+                ? "<color=#ff6b57>target out of reach</color>"
+                : $"{toolkit.ValidCount}/8 solutions   branch {toolkit.AppliedIndex}   {toolkit.selectionMode}";
         }
 
-        GUI.Box(new Rect(12, 12, 330, 210), GUIContent.none, box);
-        GUILayout.BeginArea(new Rect(24, 22, 310, 195));
-        GUILayout.Label(status, style);
-        GUILayout.Space(6);
-        GUILayout.Label(
-            "<b>Drag</b> the green handle to move the target\n" +
-            "<b>Scroll</b>  push the target in depth\n" +
-            "<b>Tab</b>  next robot        <b>1-8</b>  solution branch\n" +
-            "<b>Q / E</b>  yaw             <b>Z / C</b>  pitch\n" +
-            "<b>Space</b>  manual / closest-to-current\n" +
-            "<b>O</b>  demo orbit          <b>R</b>  reset\n" +
-            "<b>H</b>  hide this panel", style);
+        string keys =
+            "<b>Drag</b> the handle to move the target\n" +
+            "<b>Scroll</b> to push it towards or away from you\n" +
+            "<b>Q</b> / <b>E</b> yaw     <b>Z</b> / <b>C</b> pitch\n" +
+            "<b>1</b>-<b>8</b> pick a solution branch\n" +
+            "<b>Space</b> manual / closest-to-current\n" +
+            (robots.Count > 1 ? "<b>Tab</b> next robot\n" : "") +
+            "<b>O</b> demo orbit     <b>R</b> reset     <b>H</b> hide";
+
+        // GUIStyle.CalcSize under-measures multi-line content, which used to clip
+        // the last row: measure each line on its own and stack the heights.
+        string[] keyLines = keys.Split('\n');
+        float width = titleStyle.CalcSize(new GUIContent(title)).x;
+        if (status.Length > 0)
+            width = Mathf.Max(width, style.CalcSize(new GUIContent(status)).x);
+        foreach (string line in keyLines)
+            width = Mathf.Max(width, style.CalcSize(new GUIContent(line)).x);
+
+        float height = titleStyle.lineHeight
+                     + (status.Length > 0 ? style.lineHeight : 0f)
+                     + 10f
+                     + keyLines.Length * style.lineHeight;
+
+        var panel = new Rect(16f, 16f, width + 34f, height + 30f);
+
+        GUI.color = new Color(0.04f, 0.05f, 0.07f, 0.82f);
+        GUI.DrawTexture(panel, Texture2D.whiteTexture);
+        GUI.color = Color.white;
+
+        GUILayout.BeginArea(new Rect(panel.x + 16f, panel.y + 13f, panel.width - 32f, panel.height - 26f));
+        GUILayout.Label(title, titleStyle);
+        if (status.Length > 0)
+            GUILayout.Label(status, style);
+        GUILayout.Space(10f);
+        GUILayout.Label(keys, style);
         GUILayout.EndArea();
+    }
+
+    // A soft ring drawn once and reused for every handle.
+    static Texture2D ring;
+
+    static Texture2D Ring
+    {
+        get
+        {
+            if (ring != null)
+                return ring;
+
+            const int size = 64;
+            ring = new Texture2D(size, size, TextureFormat.RGBA32, false)
+            {
+                hideFlags = HideFlags.HideAndDontSave,
+                wrapMode = TextureWrapMode.Clamp,
+            };
+            float centre = (size - 1) * 0.5f;
+            for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    float d = Vector2.Distance(new Vector2(x, y), new Vector2(centre, centre)) / centre;
+                    // opaque on the rim, transparent inside, feathered on both edges
+                    float alpha = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.62f, 0.80f, d))
+                                * Mathf.SmoothStep(1f, 0f, Mathf.InverseLerp(0.90f, 1f, d));
+                    ring.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
+                }
+            ring.Apply();
+            return ring;
+        }
     }
 
     void OnDrawGizmos()
