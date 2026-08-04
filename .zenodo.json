@@ -1,7 +1,7 @@
 {
   "title": "Inverse Kinematics for the UR16e in Unity",
   "upload_type": "software",
-  "license": "MIT",
+  "license": "mit",
   "version": "2.0.0",
   "creators": [
     {
